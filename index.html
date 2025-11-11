@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7c3aed">
+<link rel="manifest" href="/calcinver/site.webmanifest" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Inversiones - Calculadora Avanzada</title>
+<style>
+:root{--bg:#0f172a;--card:#0b1220;--muted:#9aa4bf;--accent:#7c3aed;--success:#10b981;--warning:#f59e0b;--glass:rgba(255,255,255,0.04)}
+*{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+body{margin:0;background:linear-gradient(180deg,#071028 0%, #081230 100%);color:#e6eef8;min-height:100vh;padding:28px}
+.container{max-width:1200px;margin:0 auto}
+header{margin-bottom:24px}
+h1{margin:0 0 8px 0;font-size:24px}
+p.lead{margin:0;color:var(--muted);font-size:14px}
+.card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+input[type=text], input[type=number], input[type=date], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:inherit;font-size:14px}
+input:focus{outline:none;border-color:var(--accent)}
+.col-3{grid-column:span 3}
+.col-4{grid-column:span 4}
+.col-6{grid-column:span 6}
+.col-12{grid-column:span 12}
+.btn{padding:10px 16px;border-radius:8px;border:0;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{background:#6d28d9}
+.btn-success{background:var(--success);color:white}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted)}
+.btn-ghost:hover{background:rgba(255,255,255,0.05)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin:16px 0}
+.stat-card{background:linear-gradient(135deg, rgba(124,58,237,0.1), rgba(124,58,237,0.05));padding:16px;border-radius:10px;border:1px solid rgba(124,58,237,0.2)}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:4px}
+.stat-value{font-size:24px;font-weight:700;color:#fff}
+.stat-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.investment-item{background:rgba(255,255,255,0.03);padding:16px;border-radius:10px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.05)}
+.investment-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:12px}
+.investment-name{font-size:16px;font-weight:600}
+.investment-details{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:8px;font-size:13px;color:var(--muted)}
+.detail-item{display:flex;flex-direction:column}
+.detail-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.detail-value{color:#fff;font-weight:500}
+.progress-bar{background:rgba(255,255,255,0.05);height:6px;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{background:linear-gradient(90deg, var(--accent), var(--success));height:100%;transition:width 0.3s}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:left;font-size:13px}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;background:rgba(11,18,32,0.8);position:sticky;top:0}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.badge-primary{background:rgba(124,58,237,0.2);color:#a78bfa}
+.badge-success{background:rgba(16,185,129,0.2);color:#34d399}
+.badge-warning{background:rgba(245,158,11,0.2);color:#fbbf24}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.tiny{font-size:12px}
+.editable-input{width:100px;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:inherit;font-size:13px}
+.editable-input:focus{outline:none;border-color:var(--accent)}
+@media(max-width:880px){.col-3,.col-4,.col-6{grid-column:span 12}.stats-grid{grid-template-columns:1fr}}
+</style>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(console.warn));
+  }
+</script>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>📊 Calculadora de Inversiones Avanzada</h1>
+<p class="lead">Gestiona múltiples inversiones, calcula ganancias solo en días hábiles y visualiza tu rendimiento total e individual</p>
+</header>
+
+<section class="card">
+<h3 style="margin:0 0 16px 0">➕ Nueva Inversión</h3>
+<div class="grid">
+<div class="col-4">
+<label>Nombre de la inversión</label>
+<input id="name" type="text" placeholder="Ej: Inversión Principal" />
+</div>
+<div class="col-4">
+<label>Fecha de inicio</label>
+<input id="startDate" type="date" required />
+</div>
+<div class="col-4">
+<label>Monto invertido (USD)</label>
+<input id="amount" type="number" min="0" step="0.01" placeholder="1000.00" required />
+</div>
+<div class="col-3">
+<label>% Ganancia por día <span id="pctLabel" class="tiny" style="color:var(--accent)">1.0%</span></label>
+<input id="pct" type="range" min="0.5" max="2" step="0.01" value="1" />
+</div>
+<div class="col-3">
+<label>Días hábiles</label>
+<input id="days" type="number" min="1" step="1" value="30" />
+</div>
+<div class="col-3">
+<label>O fecha final (opcional)</label>
+<input id="endDate" type="date" />
+</div>
+<div class="col-3" style="display:flex;align-items:end">
+<button id="addBtn" class="btn btn-primary" style="width:100%">Agregar Inversión</button>
+</div>
+</div>
+</section>
+
+<section class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<h3 style="margin:0">📈 Resumen Total</h3>
+<div class="btn-group">
+<button id="exportBtn" class="btn btn-ghost btn-sm">Exportar CSV</button>
+<button id="clearAllBtn" class="btn btn-ghost btn-sm">Limpiar Todo</button>
+</div>
+</div>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-label">Total Invertido</div>
+<div class="stat-value" id="totalInvested">$0.00</div>
+<div class="stat-sub"><span class="badge badge-primary" id="totalInvestments">0 inversiones</span></div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Ganancia Diaria Promedio</div>
+<div class="stat-value" id="avgDaily">$0.00</div>
+<div class="stat-sub">Basado en días hábiles</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Ganancia Total Acumulada</div>
+<div class="stat-value" id="totalGain">$0.00</div>
+<div class="stat-sub" id="totalDays">0 días hábiles</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Retorno Total</div>
+<div class="stat-value" id="totalReturn">0.00%</div>
+<div class="stat-sub">ROI acumulado</div>
+</div>
+</div>
+</section>
+
+<section class="card">
+<h3 style="margin:0 0 16px 0">💼 Mis Inversiones</h3>
+<div id="investmentsList"></div>
+</section>
+
+<section class="card">
+<h3 style="margin:0 0 16px 0">🎯 Calculadora de Meta de Ahorro</h3>
+<p class="small muted" style="margin-bottom:16px">Calcula cuántos días hábiles necesitas para alcanzar tu meta de ahorro desde una inversión específica</p>
+<div class="grid">
+<div class="col-6">
+<label>Seleccionar inversión</label>
+<select id="goalInvestment">
+<option value="">-- Selecciona una inversión --</option>
+</select>
+</div>
+<div class="col-6">
+<label>Meta de ahorro (USD)</label>
+<input id="goalAmount" type="number" min="0" step="0.01" placeholder="500.00" />
+</div>
+<div class="col-12">
+<button id="calculateGoalBtn" class="btn btn-success">Calcular Días Necesarios</button>
+</div>
+</div>
+<div id="goalResult" style="display:none;margin-top:16px;padding:16px;background:rgba(16,185,129,0.1);border-radius:10px;border:1px solid rgba(16,185,129,0.3)">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+<div>
+<div class="small muted">Inversión Seleccionada</div>
+<div style="font-weight:600;margin-top:4px" id="goalInvName">-</div>
+</div>
+<div>
+<div class="small muted">Meta de Ahorro</div>
+<div style="font-weight:600;margin-top:4px;color:var(--success)" id="goalTarget">$0.00</div>
+</div>
+<div>
+<div class="small muted">Ganancia Diaria</div>
+<div style="font-weight:600;margin-top:4px" id="goalDaily">$0.00</div>
+</div>
+<div>
+<div class="small muted">Días Hábiles Necesarios</div>
+<div style="font-weight:600;margin-top:4px;font-size:20px;color:var(--accent)" id="goalDays">0</div>
+</div>
+<div>
+<div class="small muted">Fecha Estimada de Cumplimiento</div>
+<div style="font-weight:600;margin-top:4px" id="goalDate">-</div>
+</div>
+<div>
+<div class="small muted">Ganancia Total Acumulada</div>
+<div style="font-weight:600;margin-top:4px;color:var(--success)" id="goalTotal">$0.00</div>
+</div>
+</div>
+<div style="margin-top:12px">
+<button class="btn btn-ghost btn-sm" onclick="showGoalTimeline()">Ver Cronograma Detallado</button>
+</div>
+</div>
+</section>
+
+<section id="tableSection" class="card" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<h3 style="margin:0">📅 Detalle de Días Hábiles (Lunes a Viernes)</h3>
+<div class="btn-group">
+<button class="btn btn-success btn-sm" onclick="saveTableEdits()" id="saveEditsBtn" style="display:none">💾 Guardar Cambios</button>
+<button class="btn btn-ghost btn-sm" onclick="hideTable()">Ocultar Tabla</button>
+</div>
+</div>
+<p class="small muted">💡 Puedes editar el porcentaje y monto de cada día directamente en la tabla. Los cambios se recalcularán automáticamente.</p>
+<div style="overflow:auto;max-height:500px">
+<table id="daysTable">
+<thead>
+<tr>
+<th>Inversión</th>
+<th>Fecha</th>
+<th>Día</th>
+<th>Monto Base</th>
+<th>% Diario</th>
+<th>Ganancia del Día</th>
+<th>Ganancia Acumulada</th>
+<th>Total (Base + Ganancia)</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = num => Number(num).toLocaleString('es-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+let investments = [];
+let currentDetailId = null;
+let goalData = null;
+let dailyData = [];
+
+function init(){
+  loadData();
+  $('pct').addEventListener('input', ()=> $('pctLabel').textContent = $('pct').value + '%');
+  $('addBtn').addEventListener('click', addInvestment);
+  $('exportBtn').addEventListener('click', exportCSV);
+  $('clearAllBtn').addEventListener('click', clearAll);
+  $('endDate').addEventListener('change', updateDaysFromEndDate);
+  $('calculateGoalBtn').addEventListener('click', calculateGoal);
+  render();
+}
+
+function loadData(){
+  const storedInv = localStorage.getItem('inversiones_v2');
+  const storedDaily = localStorage.getItem('daily_data_v2');
+  if(storedInv) investments = JSON.parse(storedInv);
+  if(storedDaily) dailyData = JSON.parse(storedDaily);
+}
+
+function save(){
+  localStorage.setItem('inversiones_v2', JSON.stringify(investments));
+  localStorage.setItem('daily_data_v2', JSON.stringify(dailyData));
+}
+
+function isWeekday(date){
+  const day = date.getDay();
+  return day !== 0 && day !== 6;
+}
+
+function getWeekdaysBetween(startDate, days){
+  const result = [];
+  let current = new Date(startDate);
+  let count = 0;
+  
+  while(count < days){
+    if(isWeekday(current)){
+      result.push(new Date(current));
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return result;
+}
+
+function countWeekdaysBetween(start, end){
+  let count = 0;
+  let current = new Date(start);
+  const endDate = new Date(end);
+  
+  while(current <= endDate){
+    if(isWeekday(current)) count++;
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
+
+function updateDaysFromEndDate(){
+  const start = $('startDate').value;
+  const end = $('endDate').value;
+  if(start && end){
+    const weekdays = countWeekdaysBetween(start, end);
+    $('days').value = weekdays;
+  }
+}
+
+function addInvestment(){
+  const name = $('name').value.trim() || 'Inversión ' + (investments.length + 1);
+  const startDate = $('startDate').value;
+  const amount = parseFloat($('amount').value) || 0;
+  const pct = parseFloat($('pct').value) || 1;
+  let days = parseInt($('days').value) || 0;
+  const endDate = $('endDate').value;
+
+  if(!startDate || isNaN(new Date(startDate).getTime()) || amount <= 0 || (days <= 0 && !endDate)){
+    alert('Por favor completa todos los campos requeridos con valores válidos');
+    return;
+  }
+
+  if(endDate){
+    if(isNaN(new Date(endDate).getTime())){
+      alert('Fecha final inválida');
+      return;
+    }
+    days = countWeekdaysBetween(startDate, endDate);
+    if(days <= 0){
+      alert('La fecha final debe ser posterior a la fecha de inicio');
+      return;
+    }
+  }
+
+  const inv = {
+    id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name,
+    startDate,
+    amount,
+    pct,
+    days
+  };
+
+  investments.push(inv);
+  save();
+  render();
+  clearForm();
+}
+
+function clearForm(){
+  $('name').value = '';
+  $('startDate').value = '';
+  $('amount').value = '';
+  $('days').value = '30';
+  $('endDate').value = '';
+  $('pct').value = '1';
+  $('pctLabel').textContent = '1.0%';
+}
+
+function editInvestment(id){
+  const inv = investments.find(i => i.id === id);
+  if(!inv) return;
+  
+  $('name').value = inv.name;
+  $('startDate').value = inv.startDate;
+  $('amount').value = inv.amount;
+  $('pct').value = inv.pct;
+  $('days').value = inv.days;
+  $('pctLabel').textContent = inv.pct + '%';
+  
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  
+  if(confirm('Los datos se han cargado en el formulario. Al agregar la inversión, se reemplazará la anterior. ¿Continuar?')){
+    investments = investments.filter(i => i.id !== id);
+    dailyData = dailyData.filter(d => d.investmentId !== id);
+    save();
+    render();
+  }
+}
+
+function deleteInvestment(id){
+  if(confirm('¿Eliminar esta inversión?')){
+    investments = investments.filter(i => i.id !== id);
+    dailyData = dailyData.filter(d => d.investmentId !== id);
+    save();
+    render();
+  }
+}
+
+function clearAll(){
+  if(confirm('¿Eliminar TODAS las inversiones? Esta acción no se puede deshacer.')){
+    investments = [];
+    dailyData = [];
+    save();
+    render();
+  }
+}
+
+function render(){
+  renderSummary();
+  renderInvestments();
+  updateGoalInvestmentSelect();
+}
+
+function renderSummary(){
+  let totalInvested = 0;
+  let totalDailyGain = 0; // ← esto es lo nuevo
+  let totalAccumulated = 0;
+  let totalDaysCount = 0;
+
+  investments.forEach(inv => {
+    totalInvested += inv.amount;
+
+    // ✅ Ganancia diaria de esta inversión (interés simple)
+    const dailyGainThisInv = inv.amount * (inv.pct / 100);
+    totalDailyGain += dailyGainThisInv;
+
+    // Para ganancia total acumulada y días, seguimos usando los días hábiles
+    const weekdays = getWeekdaysBetween(inv.startDate, inv.days);
+    totalDaysCount += weekdays.length;
+
+    weekdays.forEach(date => {
+      const dateStr = date.toISOString().slice(0, 10);
+      const customData = dailyData.find(d => d.investmentId === inv.id && d.date === dateStr);
+      const dayAmount = customData ? customData.amount : inv.amount;
+      const dayPct = customData ? customData.pct : inv.pct;
+      const dailyGain = dayAmount * (dayPct / 100);
+      totalAccumulated += dailyGain;
+    });
+  });
+
+  const roi = totalInvested > 0 ? (totalAccumulated / totalInvested) * 100 : 0;
+
+  // ✅ Ahora usamos totalDailyGain directamente
+  $('totalInvested').textContent = '$' + fmt(totalInvested);
+  $('totalInvestments').textContent = investments.length + ' inversión' + (investments.length !== 1 ? 'es' : '');
+  $('avgDaily').textContent = '$' + fmt(totalDailyGain); // ← ¡esto es lo que querías!
+  $('totalGain').textContent = '$' + fmt(totalAccumulated);
+  $('totalDays').textContent = totalDaysCount + ' días hábiles';
+  $('totalReturn').textContent = fmt(roi) + '%';
+}
+
+function renderInvestments(){
+  const list = $('investmentsList');
+  
+  if(investments.length === 0){
+    list.innerHTML = '<div class="muted" style="text-align:center;padding:20px">No hay inversiones. Agrega tu primera inversión usando el formulario.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  investments.forEach(inv => {
+    const weekdays = getWeekdaysBetween(inv.startDate, inv.days);
+    let totalGain = 0;
+    
+    weekdays.forEach(date => {
+      const dateStr = date.toISOString().slice(0, 10);
+      const customData = dailyData.find(d => d.investmentId === inv.id && d.date === dateStr);
+      const dayAmount = customData ? customData.amount : inv.amount;
+      const dayPct = customData ? customData.pct : inv.pct;
+      totalGain += dayAmount * (dayPct / 100);
+    });
+    
+    const dailyGain = totalGain / inv.days;
+    const roi = (totalGain / inv.amount) * 100;
+    const finalAmount = inv.amount + totalGain;
+
+    const div = document.createElement('div');
+    div.className = 'investment-item';
+    
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'investment-header';
+    headerDiv.innerHTML = '<div><div class="investment-name">' + escapeHtml(inv.name) + '</div><span class="badge badge-success">ROI: ' + fmt(roi) + '%</span></div>';
+    
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'btn-group';
+    
+    const btnDetail = document.createElement('button');
+    btnDetail.className = 'btn btn-ghost btn-sm';
+    btnDetail.id = 'btn-' + inv.id;
+    btnDetail.textContent = 'Ver Detalle';
+    btnDetail.onclick = () => showDetails(inv.id);
+    
+    const btnEdit = document.createElement('button');
+    btnEdit.className = 'btn btn-ghost btn-sm';
+    btnEdit.textContent = 'Editar';
+    btnEdit.onclick = () => editInvestment(inv.id);
+    
+    const btnDelete = document.createElement('button');
+    btnDelete.className = 'btn btn-ghost btn-sm';
+    btnDelete.textContent = 'Eliminar';
+    btnDelete.onclick = () => deleteInvestment(inv.id);
+    
+    btnGroup.appendChild(btnDetail);
+    btnGroup.appendChild(btnEdit);
+    btnGroup.appendChild(btnDelete);
+    headerDiv.appendChild(btnGroup);
+    
+    const detailsDiv = document.createElement('div');
+    detailsDiv.className = 'investment-details';
+    detailsDiv.innerHTML = '<div class="detail-item"><div class="detail-label">Fecha Inicio</div><div class="detail-value">' + inv.startDate + '</div></div>' +
+      '<div class="detail-item"><div class="detail-label">Monto Invertido</div><div class="detail-value">$' + fmt(inv.amount) + '</div></div>' +
+      '<div class="detail-item"><div class="detail-label">% Diario Base</div><div class="detail-value">' + inv.pct + '%</div></div>' +
+      '<div class="detail-item"><div class="detail-label">Días Hábiles</div><div class="detail-value">' + inv.days + '</div></div>' +
+      '<div class="detail-item"><div class="detail-label">Ganancia Diaria Promedio</div><div class="detail-value">$' + fmt(dailyGain) + '</div></div>' +
+      '<div class="detail-item"><div class="detail-label">Ganancia Total</div><div class="detail-value" style="color:var(--success)">$' + fmt(totalGain) + '</div></div>' +
+      '<div class="detail-item"><div class="detail-label">Total Final</div><div class="detail-value" style="color:var(--accent)">$' + fmt(finalAmount) + '</div></div>';
+    
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    progressBar.innerHTML = '<div class="progress-fill" style="width:' + Math.min(roi, 100) + '%"></div>';
+    
+    div.appendChild(headerDiv);
+    div.appendChild(detailsDiv);
+    div.appendChild(progressBar);
+    list.appendChild(div);
+  });
+  
+  updateButtonTexts();
+}
+
+function showDetails(id){
+  const section = $('tableSection');
+  
+  if(currentDetailId === id && section.style.display === 'block'){
+    hideTable();
+    return;
+  }
+
+  const inv = investments.find(i => i.id === id);
+  if(!inv) return;
+
+  const tbody = $('daysTable').querySelector('tbody');
+  tbody.innerHTML = '';
+
+  const weekdays = getWeekdaysBetween(inv.startDate, inv.days);
+  let accumulated = 0;
+
+  weekdays.forEach((date, idx) => {
+    const dateStr = date.toISOString().slice(0, 10);
+    const dayName = date.toLocaleDateString('es-ES', {weekday: 'long'});
+    
+    const customData = dailyData.find(d => d.investmentId === inv.id && d.date === dateStr);
+    const dayAmount = customData ? customData.amount : inv.amount;
+    const dayPct = customData ? customData.pct : inv.pct;
+    
+    const dailyGain = dayAmount * (dayPct / 100);
+    accumulated += dailyGain;
+    const total = dayAmount + accumulated;
+
+    const tr = document.createElement('tr');
+    tr.dataset.invId = inv.id;
+    tr.dataset.date = dateStr;
+    
+    const td1 = document.createElement('td');
+    td1.innerHTML = '<strong>' + escapeHtml(inv.name) + '</strong>';
+    
+    const td2 = document.createElement('td');
+    td2.textContent = dateStr;
+    
+    const td3 = document.createElement('td');
+    td3.innerHTML = '<span class="badge badge-primary">' + dayName + '</span>';
+    
+    const td4 = document.createElement('td');
+    const input1 = document.createElement('input');
+    input1.type = 'number';
+    input1.step = '0.01';
+    input1.value = dayAmount;
+    input1.className = 'editable-input editable-amount';
+    td4.appendChild(input1);
+    
+    const td5 = document.createElement('td');
+    const input2 = document.createElement('input');
+    input2.type = 'number';
+    input2.step = '0.01';
+    input2.value = dayPct;
+    input2.className = 'editable-input editable-pct';
+    input2.style.width = '70px';
+    td5.appendChild(input2);
+    td5.appendChild(document.createTextNode('%'));
+    
+    const td6 = document.createElement('td');
+    td6.style.color = 'var(--success)';
+    td6.className = 'gain-display';
+    td6.textContent = '$' + fmt(dailyGain);
+    
+    const td7 = document.createElement('td');
+    td7.style.color = 'var(--success)';
+    td7.style.fontWeight = '600';
+    td7.className = 'acc-display';
+    td7.textContent = '$' + fmt(accumulated);
+    
+    const td8 = document.createElement('td');
+    td8.style.color = 'var(--accent)';
+    td8.style.fontWeight = '700';
+    td8.className = 'total-display';
+    td8.textContent = '$' + fmt(total);
+    
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    tr.appendChild(td4);
+    tr.appendChild(td5);
+    tr.appendChild(td6);
+    tr.appendChild(td7);
+    tr.appendChild(td8);
+    
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('input.editable-amount, input.editable-pct').forEach(input => {
+    input.addEventListener('input', () => {
+      recalculateTable();
+      $('saveEditsBtn').style.display = 'inline-block';
+    });
+  });
+
+  section.style.display = 'block';
+  currentDetailId = id;
+  section.scrollIntoView({behavior: 'smooth'});
+  updateButtonTexts();
+}
+
+function hideTable(){
+  $('tableSection').style.display = 'none';
+  currentDetailId = null;
+  updateButtonTexts();
+}
+
+function updateButtonTexts(){
+  investments.forEach(inv => {
+    const btn = document.getElementById('btn-' + inv.id);
+    if(btn){
+      btn.textContent = currentDetailId === inv.id ? 'Ocultar Detalle' : 'Ver Detalle';
+    }
+  });
+}
+
+function recalculateTable(){
+  const tbody = $('daysTable').querySelector('tbody');
+  const rows = tbody.querySelectorAll('tr');
+  let accumulated = 0;
+  
+  rows.forEach(row => {
+    const amountInput = row.querySelector('.editable-amount');
+    const pctInput = row.querySelector('.editable-pct');
+    
+    const amount = parseFloat(amountInput.value) || 0;
+    const pct = parseFloat(pctInput.value) || 0;
+    
+    const dailyGain = amount * (pct / 100);
+    accumulated += dailyGain;
+    const total = amount + accumulated;
+    
+    row.querySelector('.gain-display').textContent = '$' + fmt(dailyGain);
+    row.querySelector('.acc-display').textContent = '$' + fmt(accumulated);
+    row.querySelector('.total-display').textContent = '$' + fmt(total);
+  });
+}
+
+function saveTableEdits(){
+  const tbody = $('daysTable').querySelector('tbody');
+  const rows = tbody.querySelectorAll('tr');
+  
+  rows.forEach(row => {
+    const invId = row.dataset.invId;
+    const date = row.dataset.date;
+    const amount = parseFloat(row.querySelector('.editable-amount').value) || 0;
+    const pct = parseFloat(row.querySelector('.editable-pct').value) || 0;
+    
+    const existingIndex = dailyData.findIndex(d => d.investmentId === invId && d.date === date);
+    
+    if(existingIndex >= 0){
+      dailyData[existingIndex] = { investmentId: invId, date, amount, pct };
+    } else {
+      dailyData.push({ investmentId: invId, date, amount, pct });
+    }
+  });
+  
+  save();
+  $('saveEditsBtn').style.display = 'none';
+  renderSummary();
+  renderInvestments();
+  
+  alert('✅ Cambios guardados exitosamente');
+}
+
+function updateGoalInvestmentSelect(){
+  const select = $('goalInvestment');
+  select.innerHTML = '<option value="">-- Selecciona una inversión --</option>';
+  
+  investments.forEach(inv => {
+    const option = document.createElement('option');
+    option.value = inv.id;
+    option.textContent = `${inv.name} ($${fmt(inv.amount)} - ${inv.pct}% diario)`;
+    select.appendChild(option);
+  });
+}
+
+function calculateGoal(){
+  const invId = $('goalInvestment').value;
+  const goalAmount = parseFloat($('goalAmount').value) || 0;
+  
+  if(!invId){
+    alert('Por favor selecciona una inversión');
+    return;
+  }
+  
+  if(goalAmount <= 0){
+    alert('Por favor ingresa una meta de ahorro válida');
+    return;
+  }
+  
+  const inv = investments.find(i => i.id === invId);
+  if(!inv) return;
+  
+  const dailyGain = inv.amount * (inv.pct / 100);
+  const daysNeeded = Math.ceil(goalAmount / dailyGain);
+  
+  let currentDate = new Date(inv.startDate);
+  let businessDaysCount = 0;
+  let estimatedDate = null;
+  
+  while(businessDaysCount < daysNeeded){
+    if(isWeekday(currentDate)){
+      businessDaysCount++;
+      if(businessDaysCount === daysNeeded){
+        estimatedDate = new Date(currentDate);
+      }
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  goalData = {
+    investment: inv,
+    goalAmount: goalAmount,
+    dailyGain: dailyGain,
+    daysNeeded: daysNeeded,
+    estimatedDate: estimatedDate,
+    totalGain: dailyGain * daysNeeded
+  };
+  
+  displayGoalResult();
+}
+
+function displayGoalResult(){
+  if(!goalData) return;
+  
+  const resultDiv = $('goalResult');
+  resultDiv.style.display = 'block';
+  
+  $('goalInvName').textContent = goalData.investment.name;
+  $('goalTarget').textContent = '$' + fmt(goalData.goalAmount);
+  $('goalDaily').textContent = '$' + fmt(goalData.dailyGain);
+  $('goalDays').textContent = goalData.daysNeeded + ' días';
+  $('goalDate').textContent = goalData.estimatedDate.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  });
+  $('goalTotal').textContent = '$' + fmt(goalData.totalGain);
+  
+  resultDiv.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
+function showGoalTimeline(){
+  if(!goalData) return;
+  
+  const section = $('tableSection');
+  const tbody = $('daysTable').querySelector('tbody');
+  tbody.innerHTML = '';
+  
+  const inv = goalData.investment;
+  const weekdays = getWeekdaysBetween(inv.startDate, goalData.daysNeeded);
+  let accumulated = 0;
+  
+  weekdays.forEach((date, idx) => {
+    const dateStr = date.toISOString().slice(0, 10);
+    const dayName = date.toLocaleDateString('es-ES', {weekday: 'long'});
+    const dailyGain = goalData.dailyGain;
+    accumulated += dailyGain;
+    const total = inv.amount + accumulated;
+    
+    const isGoalReached = accumulated >= goalData.goalAmount;
+    
+    const tr = document.createElement('tr');
+    if(isGoalReached) tr.className = 'goal-reached';
+    
+    const td1 = document.createElement('td');
+    td1.innerHTML = '<strong>' + escapeHtml(inv.name) + '</strong>';
+    if(isGoalReached){
+      td1.innerHTML += ' <span class="badge badge-success">✓ Meta Alcanzada</span>';
+    }
+    
+    const td2 = document.createElement('td');
+    td2.textContent = dateStr;
+    
+    const td3 = document.createElement('td');
+    td3.innerHTML = '<span class="badge badge-primary">' + dayName + '</span>';
+    
+    const td4 = document.createElement('td');
+    td4.textContent = '$' + fmt(inv.amount);
+    
+    const td5 = document.createElement('td');
+    td5.textContent = inv.pct + '%';
+    
+    const td6 = document.createElement('td');
+    td6.style.color = 'var(--success)';
+    td6.textContent = '$' + fmt(dailyGain);
+    
+    const td7 = document.createElement('td');
+    td7.style.color = 'var(--success)';
+    td7.style.fontWeight = '600';
+    td7.textContent = '$' + fmt(accumulated);
+    
+    const td8 = document.createElement('td');
+    td8.style.color = 'var(--accent)';
+    td8.style.fontWeight = '700';
+    td8.textContent = '$' + fmt(total);
+    
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    tr.appendChild(td4);
+    tr.appendChild(td5);
+    tr.appendChild(td6);
+    tr.appendChild(td7);
+    tr.appendChild(td8);
+    
+    tbody.appendChild(tr);
+  });
+  
+  section.style.display = 'block';
+  currentDetailId = null;
+  updateButtonTexts();
+  section.scrollIntoView({behavior: 'smooth'});
+}
+
+function exportCSV(){
+  if(investments.length === 0){
+    alert('No hay inversiones para exportar');
+    return;
+  }
+
+  const timestamp = new Date().toISOString().slice(0,10); // Ej: 2025-11-08
+
+  // === 1. CSV: RESUMEN DE INVERSIONES ===
+  let csvResumen = 'Nombre,Fecha de Inicio,Monto Invertido (USD),Porcentaje Diario (%),Días Hábiles,Ganancia Diaria (USD),Ganancia Total (USD),Total Final (USD),ROI (%)\n';
+
+  investments.forEach(inv => {
+    const dailyGain = inv.amount * (inv.pct / 100);
+    const totalGain = dailyGain * inv.days;
+    const finalAmount = inv.amount + totalGain;
+    const roi = (totalGain / inv.amount) * 100;
+
+    // Escapar comillas si existen en el nombre
+    const safeName = (inv.name || '').replace(/"/g, '""');
+    
+    csvResumen += `"${safeName}",${inv.startDate},${inv.amount.toFixed(2)},${inv.pct},${inv.days},${dailyGain.toFixed(2)},${totalGain.toFixed(2)},${finalAmount.toFixed(2)},${roi.toFixed(2)}\n`;
+  });
+
+  // === 2. CSV: DETALLE DIARIO ===
+  let csvDetalle = 'Nombre de Inversión,Fecha,Día de la Semana,Monto Base (USD),Porcentaje Diario (%),Ganancia del Día (USD),Ganancia Acumulada (USD),Total (USD)\n';
+
+  investments.forEach(inv => {
+    const weekdays = getWeekdaysBetween(inv.startDate, inv.days);
+    let accumulated = 0;
+
+    weekdays.forEach(date => {
+      const dateStr = date.toISOString().slice(0, 10);
+      const dayName = date.toLocaleDateString('es-ES', { weekday: 'long' });
+      
+      const customData = dailyData.find(d => d.investmentId === inv.id && d.date === dateStr);
+      const dayAmount = customData ? customData.amount : inv.amount;
+      const dayPct = customData ? customData.pct : inv.pct;
+      
+      const dailyGain = dayAmount * (dayPct / 100);
+      accumulated += dailyGain;
+      const total = dayAmount + accumulated;
+
+      const safeName = (inv.name || '').replace(/"/g, '""');
+      
+      csvDetalle += `"${safeName}",${dateStr},"${dayName}",${dayAmount.toFixed(2)},${dayPct},${dailyGain.toFixed(2)},${accumulated.toFixed(2)},${total.toFixed(2)}\n`;
+    });
+  });
+
+  // === 3. DESCARGAR DOS ARCHIVOS ===
+  // Resumen
+  const blobResumen = new Blob([csvResumen], { type: 'text/csv;charset=utf-8' });
+  const urlResumen = URL.createObjectURL(blobResumen);
+  const aResumen = document.createElement('a');
+  aResumen.href = urlResumen;
+  aResumen.download = `Resumen_Inversiones_${timestamp}.csv`;
+  aResumen.click();
+  URL.revokeObjectURL(urlResumen);
+
+  // Detalle
+  const blobDetalle = new Blob([csvDetalle], { type: 'text/csv;charset=utf-8' });
+  const urlDetalle = URL.createObjectURL(blobDetalle);
+  const aDetalle = document.createElement('a');
+  aDetalle.href = urlDetalle;
+  aDetalle.download = `Detalle_Diario_Inversiones_${timestamp}.csv`;
+  aDetalle.click();
+  URL.revokeObjectURL(urlDetalle);
+
+  alert('✅ Archivos descargados:\n' +
+        `• Resumen_Inversiones_${timestamp}.csv\n` +
+        `• Detalle_Diario_Inversiones_${timestamp}.csv`);
+}
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>
